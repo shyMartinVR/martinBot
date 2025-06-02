@@ -1,5 +1,6 @@
 import {  CategoryChannel, Client, Collection, Events, Interaction, Snowflake, VoiceBasedChannel, VoiceState } from 'discord.js';
 import DynamicChannel, { DynamicChannelInteraction } from './dynamicChannel';
+import ChannelDatabase from './database';
 
 
 export default class DynamicChannelManager {
@@ -7,14 +8,41 @@ export default class DynamicChannelManager {
   private setup: VoiceBasedChannel;
   private parent: CategoryChannel;
   private channels: Collection<Snowflake, DynamicChannel> = new Collection();
+  private database: ChannelDatabase;
 
-  constructor(client: Client<true>, setupChannel: VoiceBasedChannel, dynamicCategory: CategoryChannel) {
+  constructor(client: Client<true>, setupChannel: VoiceBasedChannel, dynamicCategory: CategoryChannel, database: ChannelDatabase) {
     this.client = client;
     this.setup = setupChannel;
     this.parent = dynamicCategory;
+    this.database = database;
+    this.loadFromDatabase();
 
     client.on(Events.InteractionCreate, this.onInteractionCreate.bind(this));
     client.on(Events.VoiceStateUpdate, this.onVoiceStateUpdate.bind(this));
+  }
+
+  private async loadFromDatabase() {
+    const rows = this.database.getChannels();
+    for (const { channelId, ownerId } of rows) {
+      const channel = await this.client.channels.fetch(channelId);
+      if (!channel || !channel.isVoiceBased()) {
+        console.warn('Channel not found or not a voice channel:', channelId);
+        this.database.removeChannel(channelId);
+        continue;
+      }
+      
+      const guild = await this.client.guilds.fetch(channel.guild.id);
+      if (!guild) {
+        console.warn('Guild not found for channel:', channelId);
+        this.database.removeChannel(channelId);
+        continue;
+      }
+      const member = await guild.members.fetch(ownerId);
+      
+      const dynamicChannel = new DynamicChannel(channel, member);
+      this.channels.set(channelId, dynamicChannel);
+      console.info('Loaded dynamic channel:', dynamicChannel.channel.name, 'for owner:', member.displayName);
+    }
   }
 
   private onInteractionCreate(interaction: Interaction) {
@@ -47,12 +75,13 @@ export default class DynamicChannelManager {
       console.info(oldState.member.displayName, 'left', oldState.channel?.name);
 
       const dynamicChannel = this.channels.get(oldState.channel.id)!;
-      dynamicChannel.removeMember(oldState.member);
+      dynamicChannel.removeMember(oldState.member, this.database);
       console.assert(dynamicChannel.members.size === oldState.channel.members.size, `Member count mismatch in channel ${oldState.channel.name}. Expected: ${dynamicChannel.members.size}, Actual: ${oldState.channel.members.size}`);
       if (dynamicChannel.isEmpty()) {
         console.info('Deleting', dynamicChannel.channel.name);
         dynamicChannel.channel.delete();
         this.channels.delete(dynamicChannel.channel.id);
+        this.database.removeChannel(dynamicChannel.channel);
       }
     }
 
@@ -63,6 +92,7 @@ export default class DynamicChannelManager {
       const newChannel = await DynamicChannel.create(newState.member, this.parent, this.setup.position + 1)
       this.channels.set(newChannel.channel.id, newChannel);
       newState.member.voice.setChannel(newChannel.channel);
+      this.database.setChannel(newChannel.channel, newState.member);
     }
     
     // User joined an existing dynamic channel

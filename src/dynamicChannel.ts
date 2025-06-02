@@ -1,4 +1,5 @@
-import {  ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, GuildMember, Message, MessageFlags, ModalBuilder, ModalSubmitInteraction, TextDisplayBuilder, TextInputBuilder, TextInputStyle, VoiceChannel } from "discord.js";
+import {  ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, Collection, GuildMember, MessageFlags, ModalBuilder, ModalSubmitInteraction, Snowflake, TextDisplayBuilder, TextInputBuilder, TextInputStyle, VoiceBasedChannel } from "discord.js";
+import ChannelDatabase from "./database";
 
 export enum DynamicChannelInteraction {
   RenameButton = 'dynamicChannelRenameButton',
@@ -9,16 +10,36 @@ enum DynamicChannelInput {
   NewChannelName = 'newChannelName',
 }
 
-export default class DynamicChannel {
-  channel: VoiceChannel;
-  owner: GuildMember;
-  members: Set<GuildMember>;
+class VoiceMember {
+  public readonly joinTime: Date;
+  public readonly member: GuildMember;
+  public constructor(member: GuildMember, joinTime?: Date) {
+    this.member = member;
+    this.joinTime = joinTime ?? new Date();
+  }
 
-  constructor(channel: VoiceChannel, owner: GuildMember) {
+  get id(): Snowflake {
+    return this.member.id;
+  }
+
+  get displayName(): string {
+    return this.member.displayName;
+  }
+
+  toString(): string {
+    return this.member.toString();
+  }
+}
+
+export default class DynamicChannel {
+  channel: VoiceBasedChannel;
+  owner: VoiceMember;
+  members: Collection<Snowflake, VoiceMember>;
+
+  constructor(channel: VoiceBasedChannel, owner: GuildMember) {
     this.channel = channel;
-    this.owner = owner;
-    this.members = new Set([owner]);
-    this.sendCreationMessage();
+    this.owner = new VoiceMember(owner);
+    this.members = new Collection(channel.members.map(member => [member.id, new VoiceMember(member)]));
   }
 
   sendCreationMessage() {
@@ -45,22 +66,26 @@ export default class DynamicChannel {
       parent,
       position
     });
-    
-    return new DynamicChannel(channel, owner);
+
+    const newChannel = new DynamicChannel(channel, owner);
+    newChannel.sendCreationMessage();
+    return newChannel;
   }
 
   addMember(member: GuildMember) {
-    this.members.add(member);
+    this.members.set(member.id, new VoiceMember(member));
     console.assert(this.members.size === this.channel.members.size, `Member count mismatch in channel ${this.channel.name}. Expected: ${this.members.size}, Actual: ${this.channel.members.size}`);
   }
   
-  removeMember(member: GuildMember) {
-    this.members.delete(member);
+  removeMember(member: GuildMember, database: ChannelDatabase) {
+    this.members.delete(member.id);
     if (this.owner.id === member.id && !this.isEmpty()) {
+      this.members.sort((a, b) => a.joinTime.getTime() - b.joinTime.getTime());
       // If the owner leaves and the channel is not empty, set oldest member as the new owner
-      this.owner = this.members.values().next().value;
+      this.owner = this.members.first();
       const content = `Previous owner ${member} left. New owner is now ${this.owner}!`;
       this.channel.send({content, allowedMentions: { users: [] } });
+      database.setChannel(this.channel, this.owner.member);
     }
   }
 
