@@ -30,6 +30,13 @@ export default class DynamicChannelManager {
         this.database.removeChannel(channelId);
         continue;
       }
+
+      if (channel.members.size === 0) {
+        console.warn('Channel is empty:', channelId);
+        this.database.removeChannel(channelId);
+        channel.delete();
+        continue;
+      }
       
       const guild = await this.client.guilds.fetch(channel.guild.id);
       if (!guild) {
