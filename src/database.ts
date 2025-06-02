@@ -16,8 +16,8 @@ export default class ChannelDatabase {
   createTables() {
     this.database.run(`
       CREATE TABLE IF NOT EXISTS "channels" (
-        "channelId"	INTEGER NOT NULL UNIQUE,
-        "ownerId"	INTEGER NOT NULL,
+        "channelId"	TEXT NOT NULL UNIQUE,
+        "ownerId"	TEXT NOT NULL,
         PRIMARY KEY("channelId")
       )
     `);
