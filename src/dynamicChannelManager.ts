@@ -37,18 +37,17 @@ export default class DynamicChannelManager {
         channel.delete();
         continue;
       }
-      
-      const guild = await this.client.guilds.fetch(channel.guild.id);
-      if (!guild) {
-        console.warn('Guild not found for channel:', channelId);
-        this.database.removeChannel(channelId);
-        continue;
+
+      let owner = channel.members.get(ownerId);
+      if (!owner) {
+        console.warn('Owner member not found in channel:', ownerId, 'for channel', channelId);
+        owner = channel.members.random(); 
+        this.database.setChannel(channel, owner);
       }
-      const member = await guild.members.fetch(ownerId);
       
-      const dynamicChannel = new DynamicChannel(channel, member);
+      const dynamicChannel = new DynamicChannel(channel, owner);
       this.channels.set(channelId, dynamicChannel);
-      console.info('Loaded dynamic channel:', dynamicChannel.channel.name, 'for owner:', member.displayName);
+      console.info('Loaded dynamic channel:', dynamicChannel.channel.name, 'for owner:', owner.displayName);
     }
   }
 
