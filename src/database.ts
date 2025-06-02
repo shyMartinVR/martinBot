@@ -30,7 +30,7 @@ export default class ChannelDatabase {
   setChannel(channel: VoiceBasedChannel | Snowflake, owner: GuildMember | Snowflake) {
     const channelId = typeof channel === 'string' ? channel : channel.id;
     const ownerId = typeof owner === 'string' ? owner : owner.id;
-    this.database.run('INSERT INTO channels (channelId, ownerId) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET channels=excluded.ownerId', [channelId, ownerId]);
+    this.database.run('INSERT INTO channels (channelId, ownerId) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET ownerId=excluded.ownerId', [channelId, ownerId]);
   }
 
   removeChannel(channel: VoiceBasedChannel | Snowflake) {
