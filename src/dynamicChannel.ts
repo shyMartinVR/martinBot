@@ -74,7 +74,6 @@ export default class DynamicChannel {
 
   addMember(member: GuildMember) {
     this.members.set(member.id, new VoiceMember(member));
-    console.assert(this.members.size === this.channel.members.size, `Member count mismatch in channel ${this.channel.name}. Expected: ${this.members.size}, Actual: ${this.channel.members.size}`);
   }
   
   removeMember(member: GuildMember, database: ChannelDatabase) {
@@ -90,6 +89,7 @@ export default class DynamicChannel {
   }
 
   handleRenameButton(interaction: ButtonInteraction) {
+    console.info('Rename button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
     if (interaction.user.id !== this.owner.id) {
       interaction.reply({ content: `Only the owner ${this.owner} can rename the channel.`, flags: MessageFlags.Ephemeral });
       return;
@@ -103,6 +103,9 @@ export default class DynamicChannel {
       .setCustomId(DynamicChannelInput.NewChannelName)
       .setLabel('New Channel Name')
       .setStyle(TextInputStyle.Short)
+      .setValue(interaction.channel.name)
+      .setMinLength(1)
+      .setMaxLength(100)
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
@@ -112,12 +115,8 @@ export default class DynamicChannel {
 
   async handleRenameModal(interaction: ModalSubmitInteraction) {
     const newName = interaction.fields.getTextInputValue(DynamicChannelInput.NewChannelName).trim();
-    if (newName.length > 100) {
-      interaction.reply({ content: 'Channel name cannot exceed 100 characters.', flags: MessageFlags.Ephemeral });
-      return;
-    }
-
-    await this.channel.setName(newName);
+    console.info('Renaming channel', interaction.channel.name, 'to', newName, 'by', interaction.user.tag);
+    await this.channel.setName(newName, `Renamed by ${ interaction.user.tag }`);
     interaction.reply(`Channel renamed to ${newName}.`);
   }
   
