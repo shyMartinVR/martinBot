@@ -4,6 +4,7 @@ import ChannelDatabase from "./database";
 export enum DynamicChannelInteraction {
   RenameButton = 'dynamicChannelRenameButton',
   RenameModal = 'dynamicChannelRenameModal',
+  GuestInviteButton = 'dynamicChannelGuestInviteButton',
 }
 
 enum DynamicChannelInput {
@@ -52,7 +53,13 @@ export default class DynamicChannel {
       .setLabel('Rename Channel')
       .setStyle(ButtonStyle.Primary);
 
-    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(renameButton);
+    const guestInviteButton = new ButtonBuilder()
+      .setCustomId(DynamicChannelInteraction.GuestInviteButton)
+      .setEmoji('📧')
+      .setLabel('Create Guest Invite')
+      .setStyle(ButtonStyle.Secondary);
+
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(renameButton, guestInviteButton);
 
     const text = new TextDisplayBuilder().setContent(content);
 
@@ -118,6 +125,12 @@ export default class DynamicChannel {
     console.info('Renaming channel', interaction.channel.name, 'to', newName, 'by', interaction.user.tag);
     await this.channel.setName(newName, `Renamed by ${ interaction.user.tag }`);
     interaction.reply(`Channel renamed to ${newName}.`);
+  }
+
+  async handleGuestInviteButton(interaction: ButtonInteraction) {
+    console.info('Guest invite button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
+    const invite = await this.channel.createInvite({ temporary: true, maxAge: 0, reason: `Guest invite created by ${interaction.user.tag}` });
+    interaction.reply({ content: `${interaction.member} created a guest invite: ${invite}`, allowedMentions: { users: [] } });
   }
   
   isEmpty() {

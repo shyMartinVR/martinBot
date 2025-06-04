@@ -60,9 +60,17 @@ export default class DynamicChannelManager {
     const channel = this.channels.get(interaction.channelId)!;
 
     if (interaction.isButton()) {
-      if(interaction.customId === DynamicChannelInteraction.RenameButton) {
-        channel.handleRenameButton(interaction);
-      }
+      switch (interaction.customId) {
+        case DynamicChannelInteraction.RenameButton:
+          channel.handleRenameButton(interaction);
+          break;
+        case DynamicChannelInteraction.GuestInviteButton:
+          channel.handleGuestInviteButton(interaction);
+          break;
+        default:
+          console.warn('Unknown button interaction:', interaction.customId, 'in channel', interaction.channelId);
+          break;
+      } 
     } else if (interaction.isModalSubmit()) {
       if(interaction.customId === DynamicChannelInteraction.RenameModal) {
         channel.handleRenameModal(interaction);
