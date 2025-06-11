@@ -1,11 +1,18 @@
 import {  ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, GuildMember, Message, MessageFlags, ModalBuilder, ModalSubmitInteraction, TextDisplayBuilder, TextInputBuilder, TextInputStyle, VoiceChannel } from "discord.js";
 
+export enum DynamicChannelInteraction {
+  RenameButton = 'dynamicChannelRenameButton',
+  RenameModal = 'dynamicChannelRenameModal',
+}
+
+enum DynamicChannelInput {
+  NewChannelName = 'newChannelName',
+}
+
 export default class DynamicChannel {
   channel: VoiceChannel;
   owner: GuildMember;
   members: Set<GuildMember>;
-  controlMessage: Message;
-
 
   constructor(channel: VoiceChannel, owner: GuildMember) {
     this.channel = channel;
@@ -15,12 +22,15 @@ export default class DynamicChannel {
   }
 
   sendCreationMessage() {
+    console.info('Created', this.channel.name);
     const content = `Dynamic channel created! Owner is ${this.owner}.`;
 
     const renameButton = new ButtonBuilder()
-      .setCustomId('dynamicChannelRename')
+      .setCustomId(DynamicChannelInteraction.RenameButton)
+      .setEmoji('✏️')
       .setLabel('Rename Channel')
       .setStyle(ButtonStyle.Primary);
+
     const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(renameButton);
 
     const text = new TextDisplayBuilder().setContent(content);
@@ -35,13 +45,15 @@ export default class DynamicChannel {
       parent,
       position
     });
+    
     return new DynamicChannel(channel, owner);
   }
 
   addMember(member: GuildMember) {
     this.members.add(member);
+    console.assert(this.members.size === this.channel.members.size, `Member count mismatch in channel ${this.channel.name}. Expected: ${this.members.size}, Actual: ${this.channel.members.size}`);
   }
-
+  
   removeMember(member: GuildMember) {
     this.members.delete(member);
     if (this.owner.id === member.id && !this.isEmpty()) {
@@ -57,20 +69,24 @@ export default class DynamicChannel {
       interaction.reply({ content: `Only the owner ${this.owner} can rename the channel.`, flags: MessageFlags.Ephemeral });
       return;
     }
+
     const modal = new ModalBuilder()
-      .setCustomId('renameChannelModal')
+      .setCustomId(DynamicChannelInteraction.RenameModal)
       .setTitle('Rename Dynamic Channel');
+
     const input = new TextInputBuilder()
-      .setCustomId('newChannelName')
+      .setCustomId(DynamicChannelInput.NewChannelName)
       .setLabel('New Channel Name')
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
-      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
+
+    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
+
     interaction.showModal(modal);
   }
 
   async handleRenameModal(interaction: ModalSubmitInteraction) {
-    const newName = interaction.fields.getTextInputValue('newChannelName');
+    const newName = interaction.fields.getTextInputValue(DynamicChannelInput.NewChannelName).trim();
     if (newName.length > 100) {
       interaction.reply({ content: 'Channel name cannot exceed 100 characters.', flags: MessageFlags.Ephemeral });
       return;
