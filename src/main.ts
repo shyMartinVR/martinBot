@@ -1,7 +1,9 @@
 import {  Client, Events, GatewayIntentBits } from 'discord.js';
 import DynamicChannelManager from './dynamicChannelManager';
+import Database from './database';
 
-const { DISCORD_TOKEN, SETUP_CHANNEL_ID } = process.env;
+
+const { DISCORD_TOKEN, SETUP_CHANNEL_ID, DATABASE_PATH } = process.env;
 
 if(!DISCORD_TOKEN) {
   throw new Error('DISCORD_TOKEN environment variable is not set.');
@@ -10,6 +12,12 @@ if(!DISCORD_TOKEN) {
 if(!SETUP_CHANNEL_ID) {
   throw new Error('SETUP_CHANNEL_ID environment variable is not set.');
 }
+
+if(!DATABASE_PATH) {
+  throw new Error('DATABASE_PATH environment variable is not set.');
+}
+
+const database = new Database(DATABASE_PATH);
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
@@ -23,7 +31,7 @@ client.on(Events.ClientReady, async readyClient => {
   if (!dynamicCategory) {
     throw new Error(`SetupChannel ${setupChannel} does not belong to a valid category.`);
   }
-  new DynamicChannelManager(readyClient, setupChannel, dynamicCategory);
+  new DynamicChannelManager(readyClient, setupChannel, dynamicCategory, database);
 });
 
 client.login(DISCORD_TOKEN);
