@@ -67,9 +67,9 @@ export default class DynamicChannel {
     this.channel.send({flags: MessageFlags.IsComponentsV2, components: [text, actionRow], allowedMentions: {users: [] } });
   }
 
-  static async create(owner: GuildMember, parent: CategoryChannel, position: number) {
+  static async create(owner: GuildMember, parent: CategoryChannel, position: number, customName?: string | null) {
     const channel = await parent.guild.channels.create({
-      name: `dynamic-channel-${owner.displayName}`,
+      name: customName ?? `dynamic-channel-${owner.displayName}`,
       type: ChannelType.GuildVoice,
       parent,
       position

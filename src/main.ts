@@ -1,7 +1,8 @@
 import { Environment } from './environment';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
-import { DynamicChannelManager } from './dynamicChannelManager';
 import Database from './database';
+import { DynamicChannelManager } from './dynamicChannelManager';
+import { customNamehandler } from './customName';
 
 const database = new Database(Environment.databasePath);
 
@@ -18,6 +19,7 @@ client.on(Events.ClientReady, async readyClient => {
     throw new Error(`SetupChannel ${setupChannel} does not belong to a valid category.`);
   }
   new DynamicChannelManager(readyClient, setupChannel, dynamicCategory, database);
+  client.on(Events.InteractionCreate, customNamehandler(database));
 });
 
 client.login(Environment.discordToken);

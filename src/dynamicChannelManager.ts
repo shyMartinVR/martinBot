@@ -56,6 +56,7 @@ export class DynamicChannelManager {
   }
 
   private onInteractionCreate(interaction: Interaction) {
+    if (interaction.isChatInputCommand()) return; // Handled elsewhere
     try {
       if (!interaction.channelId || !this.channels.has(interaction.channelId)) {
         console.warn('No dynamic channel found for interaction in channel', interaction.channelId);
@@ -111,8 +112,8 @@ export class DynamicChannelManager {
       // User joined setup channel
       if (newState.member && newState.channel?.id === this.setup.id) {
         console.info(newState.member.displayName, 'joined setup channel');
-
-        const newChannel = await DynamicChannel.create(newState.member, this.parent, this.setup.position + 1)
+        const customName = this.database.getCustomChannelName(newState.member.user);
+        const newChannel = await DynamicChannel.create(newState.member, this.parent, this.setup.position + 1, customName);
         this.channels.set(newChannel.channel.id, newChannel);
         newState.member.voice.setChannel(newChannel.channel);
         this.database.setChannel(newChannel.channel, newState.member);

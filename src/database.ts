@@ -22,6 +22,13 @@ export default class ChannelDatabase {
         PRIMARY KEY("channelId")
       )
     `);
+    this.database.run(`
+      CREATE TABLE IF NOT EXISTS "custom_channel_names" (
+        "userId" TEXT NOT NULL UNIQUE,
+        "customName" TEXT NOT NULL,
+        PRIMARY KEY("userId")
+      )
+    `);
   }
 
   // #region Channel Management
@@ -39,6 +46,27 @@ export default class ChannelDatabase {
   public removeChannel(channel: Channel) {
     this.database.query('DELETE FROM channels WHERE channelId = :channelId')
       .run({ channelId: channel.id });
+  }
+  // #endregion
+
+  // #region Custom Channel Name
+  public setCustomChannelName(user: User, customName: string) {
+    this.database.query(`
+      INSERT INTO custom_channel_names (userId, customName) VALUES (:userId, :customName)
+      ON CONFLICT(userId) DO UPDATE SET customName=excluded.customName
+    `).run({ userId: user.id, customName });
+  }
+
+  public removeCustomChannelName(user: User) {
+    this.database.query('DELETE FROM custom_channel_names WHERE userId = :userId')
+      .run({ userId: user.id });
+  }
+
+  public getCustomChannelName(user: User): string | null {
+    const row = this.database.query<{ customName: string }, any>(
+      'SELECT customName FROM custom_channel_names WHERE userId = :userId'
+    ).get({ userId: user.id });
+    return row ? row.customName : null;
   }
   // #endregion
 }
