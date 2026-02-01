@@ -1,5 +1,6 @@
 import { Database } from 'bun:sqlite';
-import { GuildMember, Snowflake, VoiceBasedChannel } from 'discord.js';
+import { Channel, GuildMember, Snowflake, User, VoiceBasedChannel } from 'discord.js';
+
 
 type ChannelRow = {
   channelId: Snowflake;
@@ -13,28 +14,31 @@ export default class ChannelDatabase {
     this.createTables();
   }
 
-  createTables() {
+  private createTables() {
     this.database.run(`
       CREATE TABLE IF NOT EXISTS "channels" (
-        "channelId"	TEXT NOT NULL UNIQUE,
-        "ownerId"	TEXT NOT NULL,
+        "channelId" TEXT NOT NULL UNIQUE,
+        "ownerId" TEXT NOT NULL,
         PRIMARY KEY("channelId")
       )
     `);
   }
 
-  getChannels(): ChannelRow[] {
+  // #region Channel Management
+  public getChannels(): ChannelRow[] {
     return this.database.query<ChannelRow, any>('SELECT channelId, ownerId FROM channels').all();
   }
 
-  setChannel(channel: VoiceBasedChannel | Snowflake, owner: GuildMember | Snowflake) {
-    const channelId = typeof channel === 'string' ? channel : channel.id;
-    const ownerId = typeof owner === 'string' ? owner : owner.id;
-    this.database.run('INSERT INTO channels (channelId, ownerId) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET ownerId=excluded.ownerId', [channelId, ownerId]);
+  public setChannel(channel: VoiceBasedChannel, owner: GuildMember) {
+    this.database.query(`
+      INSERT INTO channels (channelId, ownerId) VALUES (:channelId, :ownerId)
+      ON CONFLICT(channelId) DO UPDATE SET ownerId=excluded.ownerId`
+    ).run({ channelId: channel.id, ownerId: owner.id });
   }
 
-  removeChannel(channel: VoiceBasedChannel | Snowflake) {
-    const channelId = typeof channel === 'string' ? channel : channel.id;
-    this.database.run('DELETE FROM channels WHERE channelId = ?', [channelId]);
+  public removeChannel(channel: Channel) {
+    this.database.query('DELETE FROM channels WHERE channelId = :channelId')
+      .run({ channelId: channel.id });
   }
+  // #endregion
 }

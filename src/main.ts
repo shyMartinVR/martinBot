@@ -1,31 +1,17 @@
-import {  Client, Events, GatewayIntentBits } from 'discord.js';
-import DynamicChannelManager from './dynamicChannelManager';
+import { Environment } from './environment';
+import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { DynamicChannelManager } from './dynamicChannelManager';
 import Database from './database';
 
-
-const { DISCORD_TOKEN, SETUP_CHANNEL_ID, DATABASE_PATH } = process.env;
-
-if(!DISCORD_TOKEN) {
-  throw new Error('DISCORD_TOKEN environment variable is not set.');
-}
-
-if(!SETUP_CHANNEL_ID) {
-  throw new Error('SETUP_CHANNEL_ID environment variable is not set.');
-}
-
-if(!DATABASE_PATH) {
-  throw new Error('DATABASE_PATH environment variable is not set.');
-}
-
-const database = new Database(DATABASE_PATH);
+const database = new Database(Environment.databasePath);
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
 client.on(Events.ClientReady, async readyClient => {
-  console.info('Logged in as',readyClient.user.tag);
-  const setupChannel = await readyClient.channels.fetch(SETUP_CHANNEL_ID);
+  console.info('Logged in as', readyClient.user.tag);
+  const setupChannel = await readyClient.channels.fetch(Environment.setupChannelId);
   if (!setupChannel || !setupChannel.isVoiceBased()) {
-    throw new Error(`Channel with ID ${SETUP_CHANNEL_ID} is not a valid voice channel.`);
+    throw new Error(`Channel with ID ${Environment.setupChannelId} is not a valid voice channel.`);
   }
   const dynamicCategory = setupChannel.parent;
   if (!dynamicCategory) {
@@ -34,4 +20,4 @@ client.on(Events.ClientReady, async readyClient => {
   new DynamicChannelManager(readyClient, setupChannel, dynamicCategory, database);
 });
 
-client.login(DISCORD_TOKEN);
+client.login(Environment.discordToken);

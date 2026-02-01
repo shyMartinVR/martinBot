@@ -1,9 +1,9 @@
-import { CategoryChannel, Client, Collection, Events, Interaction, Snowflake, VoiceBasedChannel, VoiceState } from 'discord.js';
+import { CategoryChannel, ChatInputCommandInteraction, Client, Collection, Events, Interaction, Snowflake, VoiceBasedChannel, VoiceState } from 'discord.js';
 import DynamicChannel, { DynamicChannelInteraction } from './dynamicChannel';
 import ChannelDatabase from './database';
 
 
-export default class DynamicChannelManager {
+export class DynamicChannelManager {
   private client: Client<true>;
   private setup: VoiceBasedChannel;
   private parent: CategoryChannel;
@@ -28,13 +28,13 @@ export default class DynamicChannelManager {
         const channel = await this.client.channels.fetch(channelId);
         if (!channel || !channel.isVoiceBased()) {
           console.warn('Channel not found or not a voice channel:', channelId);
-          this.database.removeChannel(channelId);
+          this.database.removeChannel(channel);
           continue;
         }
 
         if (channel.members.size === 0) {
           console.warn('Channel is empty:', channelId);
-          this.database.removeChannel(channelId);
+          this.database.removeChannel(channel);
           channel.delete();
           continue;
         }
@@ -62,7 +62,7 @@ export default class DynamicChannelManager {
         return;
       }
 
-      const channel = this.channels.get(interaction.channelId)!;
+      const channel = this.channels.get(interaction.channelId);
 
       if (interaction.isButton()) {
         switch (interaction.customId) {
