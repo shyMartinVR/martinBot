@@ -10,7 +10,7 @@ type ChannelRow = {
 export default class ChannelDatabase {
   private database: Database;
   public constructor(path: string) {
-    this.database = new Database(path, { create: true });
+    this.database = new Database(path, { create: true, strict: true });
     this.createTables();
   }
 
