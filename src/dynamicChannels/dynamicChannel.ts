@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, Collection, GuildMember, MessageFlags, ModalBuilder, ModalSubmitInteraction, Snowflake, TextDisplayBuilder, TextInputBuilder, TextInputStyle, VoiceBasedChannel } from "discord.js";
 import MartinDatabase from "../database";
 import { Environment } from "../environment";
+import logger from "../logger";
 
 
 export enum DynamicChannelInteraction {
@@ -46,7 +47,7 @@ export default class DynamicChannel {
   }
 
   sendCreationMessage() {
-    console.info('Created', this.channel.name);
+    logger.info('Created', this.channel.name);
     const content = `Dynamic channel created! Owner is ${this.owner}.`;
 
     const renameButton = new ButtonBuilder()
@@ -98,7 +99,7 @@ export default class DynamicChannel {
   }
 
   handleRenameButton(interaction: ButtonInteraction) {
-    console.info('Rename button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
+    logger.info('Rename button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
     if (interaction.user.id !== this.owner.id && interaction.user.id !== Environment.ownerId) {
       interaction.reply({ content: `Only the owner ${this.owner} can rename the channel.`, flags: MessageFlags.Ephemeral });
       return;
@@ -124,13 +125,13 @@ export default class DynamicChannel {
 
   async handleRenameModal(interaction: ModalSubmitInteraction) {
     const newName = interaction.fields.getTextInputValue(DynamicChannelInput.NewChannelName).trim();
-    console.info('Renaming channel', interaction.channel.name, 'to', newName, 'by', interaction.user.tag);
+    logger.info('Renaming channel', interaction.channel.name, 'to', newName, 'by', interaction.user.tag);
     await this.channel.setName(newName, `Renamed by ${ interaction.user.tag }`);
     interaction.reply(`Channel renamed to ${newName}.`);
   }
 
   async handleGuestInviteButton(interaction: ButtonInteraction) {
-    console.info('Guest invite button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
+    logger.info('Guest invite button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
     const invite = await this.channel.createInvite({ temporary: true, maxAge: 0, reason: `Guest invite created by ${interaction.user.tag}` });
     interaction.reply({ content: `${interaction.member} created a guest invite: ${invite}`, allowedMentions: { users: [] } });
   }

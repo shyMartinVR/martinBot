@@ -3,13 +3,14 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 import Database from './database';
 import { DynamicChannelManager } from './dynamicChannels/dynamicChannelManager';
 import { customNamehandler } from './dynamicChannels/customName';
+import logger from './logger';
 
 const database = new Database(Environment.databasePath);
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
 client.on(Events.ClientReady, async readyClient => {
-  console.info('Logged in as', readyClient.user.tag);
+  logger.info('Logged in as', readyClient.user.tag);
   const setupChannel = await readyClient.channels.fetch(Environment.setupChannelId);
   if (!setupChannel || !setupChannel.isVoiceBased()) {
     throw new Error(`Channel with ID ${Environment.setupChannelId} is not a valid voice channel.`);

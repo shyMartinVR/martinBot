@@ -1,6 +1,7 @@
 import { CategoryChannel, ChatInputCommandInteraction, Client, Collection, Events, Interaction, Snowflake, VoiceBasedChannel, VoiceState } from 'discord.js';
 import DynamicChannel, { DynamicChannelInteraction } from './dynamicChannel';
 import MartinDatabase from '../database';
+import logger from '../logger';
 
 
 export class DynamicChannelManager {
@@ -27,13 +28,13 @@ export class DynamicChannelManager {
       for (const { channelId, ownerId } of rows) {
         const channel = await this.client.channels.fetch(channelId);
         if (!channel || !channel.isVoiceBased()) {
-          console.warn('Channel not found or not a voice channel:', channelId);
+          logger.warn('Channel not found or not a voice channel:', channelId);
           this.database.removeChannel(channel);
           continue;
         }
 
         if (channel.members.size === 0) {
-          console.warn('Channel is empty:', channelId);
+          logger.warn('Channel is empty:', channelId);
           this.database.removeChannel(channel);
           channel.delete();
           continue;
@@ -41,17 +42,17 @@ export class DynamicChannelManager {
 
         let owner = channel.members.get(ownerId);
         if (!owner) {
-          console.warn('Owner member not found in channel:', ownerId, 'for channel', channelId);
+          logger.warn('Owner member not found in channel:', ownerId, 'for channel', channelId);
           owner = channel.members.random();
           this.database.setChannel(channel, owner);
         }
 
         const dynamicChannel = new DynamicChannel(channel, owner);
         this.channels.set(channelId, dynamicChannel);
-        console.info('Loaded dynamic channel:', dynamicChannel.channel.name, 'for owner:', owner.displayName);
+        logger.info('Loaded dynamic channel:', dynamicChannel.channel.name, 'for owner:', owner.displayName);
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }
 
@@ -59,7 +60,7 @@ export class DynamicChannelManager {
     if (interaction.isChatInputCommand()) return; // Handled elsewhere
     try {
       if (!interaction.channelId || !this.channels.has(interaction.channelId)) {
-        console.warn('No dynamic channel found for interaction in channel', interaction.channelId);
+        logger.warn('No dynamic channel found for interaction in channel', interaction.channelId);
         return;
       }
 
@@ -74,7 +75,7 @@ export class DynamicChannelManager {
             channel.handleGuestInviteButton(interaction);
             break;
           default:
-            console.warn('Unknown button interaction:', interaction.customId, 'in channel', interaction.channelId);
+            logger.warn('Unknown button interaction:', interaction.customId, 'in channel', interaction.channelId);
             break;
         }
       } else if (interaction.isModalSubmit()) {
@@ -83,7 +84,7 @@ export class DynamicChannelManager {
         }
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }
 
@@ -96,13 +97,13 @@ export class DynamicChannelManager {
 
       // User left a dynamic channel
       if (oldState.member && oldState.channel?.id && this.channels.has(oldState.channel.id)) {
-        console.info(oldState.member.displayName, 'left', oldState.channel?.name);
+        logger.info(oldState.member.displayName, 'left', oldState.channel?.name);
 
         const dynamicChannel = this.channels.get(oldState.channel.id)!;
         dynamicChannel.removeMember(oldState.member, this.database);
-        console.assert(dynamicChannel.members.size === oldState.channel.members.size, `Member count mismatch in channel ${oldState.channel.name}. Expected: ${dynamicChannel.members.size}, Actual: ${oldState.channel.members.size}`);
+        logger.assert(dynamicChannel.members.size === oldState.channel.members.size, `Member count mismatch in channel ${oldState.channel.name}. Expected: ${dynamicChannel.members.size}, Actual: ${oldState.channel.members.size}`);
         if (dynamicChannel.isEmpty()) {
-          console.info('Deleting', dynamicChannel.channel.name);
+          logger.info('Deleting', dynamicChannel.channel.name);
           dynamicChannel.channel.delete();
           this.channels.delete(dynamicChannel.channel.id);
           this.database.removeChannel(dynamicChannel.channel);
@@ -111,7 +112,7 @@ export class DynamicChannelManager {
 
       // User joined setup channel
       if (newState.member && newState.channel?.id === this.setup.id) {
-        console.info(newState.member.displayName, 'joined setup channel');
+        logger.info(newState.member.displayName, 'joined setup channel');
         const customName = this.database.getCustomChannelName(newState.member.user);
         const newChannel = await DynamicChannel.create(newState.member, this.parent, this.setup.position + 1, customName);
         this.channels.set(newChannel.channel.id, newChannel);
@@ -121,14 +122,14 @@ export class DynamicChannelManager {
 
       // User joined an existing dynamic channel
       if (newState.member && newState.channel?.id && this.channels.has(newState.channel.id)) {
-        console.info(newState.member.displayName, 'joined', newState.channel?.name);
+        logger.info(newState.member.displayName, 'joined', newState.channel?.name);
 
         const dynamicChannel = this.channels.get(newState.channel.id)!;
         dynamicChannel.addMember(newState.member);
-        console.assert(dynamicChannel.members.size === newState.channel.members.size, `Member count mismatch in channel ${newState.channel.name}. Expected: ${dynamicChannel.members.size}, Actual: ${newState.channel.members.size}`);
+        logger.assert(dynamicChannel.members.size === newState.channel.members.size, `Member count mismatch in channel ${newState.channel.name}. Expected: ${dynamicChannel.members.size}, Actual: ${newState.channel.members.size}`);
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }
 }
