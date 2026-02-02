@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, Collection, GuildMember, MessageFlags, ModalBuilder, ModalSubmitInteraction, Snowflake, TextDisplayBuilder, TextInputBuilder, TextInputStyle, VoiceBasedChannel } from "discord.js";
 import ChannelDatabase from "./database";
+import { Environment } from "./environment";
 
 
 export enum DynamicChannelInteraction {
@@ -98,7 +99,7 @@ export default class DynamicChannel {
 
   handleRenameButton(interaction: ButtonInteraction) {
     console.info('Rename button clicked by', interaction.user.tag, 'in channel', interaction.channel.name);
-    if (interaction.user.id !== this.owner.id) {
+    if (interaction.user.id !== this.owner.id && interaction.user.id !== Environment.ownerId) {
       interaction.reply({ content: `Only the owner ${this.owner} can rename the channel.`, flags: MessageFlags.Ephemeral });
       return;
     }
