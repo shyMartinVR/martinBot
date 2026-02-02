@@ -1,5 +1,5 @@
 import { REST, Routes } from 'discord.js';
-import {customDynamicChannelNameCommand } from './customName'
+import {customDynamicChannelNameCommand } from './dynamicChannels/customName'
 import { Environment } from './environment';
 const commands = [customDynamicChannelNameCommand];
 

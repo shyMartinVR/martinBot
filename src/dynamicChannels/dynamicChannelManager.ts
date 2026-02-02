@@ -1,6 +1,6 @@
 import { CategoryChannel, ChatInputCommandInteraction, Client, Collection, Events, Interaction, Snowflake, VoiceBasedChannel, VoiceState } from 'discord.js';
 import DynamicChannel, { DynamicChannelInteraction } from './dynamicChannel';
-import ChannelDatabase from './database';
+import MartinDatabase from '../database';
 
 
 export class DynamicChannelManager {
@@ -8,9 +8,9 @@ export class DynamicChannelManager {
   private setup: VoiceBasedChannel;
   private parent: CategoryChannel;
   private channels: Collection<Snowflake, DynamicChannel> = new Collection();
-  private database: ChannelDatabase;
+  private database: MartinDatabase;
 
-  constructor(client: Client<true>, setupChannel: VoiceBasedChannel, dynamicCategory: CategoryChannel, database: ChannelDatabase) {
+  constructor(client: Client<true>, setupChannel: VoiceBasedChannel, dynamicCategory: CategoryChannel, database: MartinDatabase) {
     this.client = client;
     this.setup = setupChannel;
     this.parent = dynamicCategory;

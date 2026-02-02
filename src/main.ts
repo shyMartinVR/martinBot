@@ -1,8 +1,8 @@
 import { Environment } from './environment';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import Database from './database';
-import { DynamicChannelManager } from './dynamicChannelManager';
-import { customNamehandler } from './customName';
+import { DynamicChannelManager } from './dynamicChannels/dynamicChannelManager';
+import { customNamehandler } from './dynamicChannels/customName';
 
 const database = new Database(Environment.databasePath);
 

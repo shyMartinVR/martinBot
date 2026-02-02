@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, Collection, GuildMember, MessageFlags, ModalBuilder, ModalSubmitInteraction, Snowflake, TextDisplayBuilder, TextInputBuilder, TextInputStyle, VoiceBasedChannel } from "discord.js";
-import ChannelDatabase from "./database";
-import { Environment } from "./environment";
+import MartinDatabase from "../database";
+import { Environment } from "../environment";
 
 
 export enum DynamicChannelInteraction {
@@ -85,7 +85,7 @@ export default class DynamicChannel {
     this.members.set(member.id, new VoiceMember(member));
   }
   
-  removeMember(member: GuildMember, database: ChannelDatabase) {
+  removeMember(member: GuildMember, database: MartinDatabase) {
     this.members.delete(member.id);
     if (this.owner.id === member.id && !this.isEmpty()) {
       this.members.sort((a, b) => a.joinTime.getTime() - b.joinTime.getTime());

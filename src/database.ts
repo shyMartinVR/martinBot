@@ -7,7 +7,7 @@ type ChannelRow = {
   ownerId: Snowflake;
 };
 
-export default class ChannelDatabase {
+export default class MartinDatabase {
   private database: Database;
   public constructor(path: string) {
     this.database = new Database(path, { create: true, strict: true });

@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
-import { Environment } from "./environment";
-import ChannelDatabase from "./database";
+import { Environment } from "../environment";
+import MartinDatabase from "../database";
 
 const commandName = 'custom_dynamic_channel_name';
 const nameOptionName = 'custom_name';
@@ -20,7 +20,7 @@ export const customDynamicChannelNameCommand = new SlashCommandBuilder()
       .setRequired(false)
   ).toJSON();
 
-export const customNamehandler = (database: ChannelDatabase) => {
+export const customNamehandler = (database: MartinDatabase) => {
   return async function (interaction: ChatInputCommandInteraction) {
     if (interaction.commandName !== commandName) return;
     try {
